@@ -1,3 +1,10 @@
+interface Display {
+	width: number;
+	height: number;
+	ctx: CanvasRenderingContext2D;
+	backCtx: OffscreenCanvasRenderingContext2D;
+}
+
 class Vector2 {
 	x: number;
 	y: number;
@@ -27,39 +34,35 @@ class Player {
 }
 
 class Game {
-	width: number;
-	height: number;
-	canvas: HTMLCanvasElement | null;
-	ctx: CanvasRenderingContext2D | null;
-	backCanvas: OffscreenCanvas;
-	backCtx: OffscreenCanvasRenderingContext2D | null;
+	display: Display;
 
 	constructor() {
-		this.width = 800;
-		this.height = 600;
-		this.canvas = document.getElementById("canvas") as (HTMLCanvasElement | null);
-		if (this.canvas === null) throw new Error("Couldn't load canvas");
-		this.canvas.width = this.width;
-		this.canvas.height = this.height;
-		this.ctx = this.canvas.getContext("2d");
-		if (this.ctx === null) throw new Error("Couldn't get context from canvas");
-		this.backCanvas = new OffscreenCanvas(this.width, this.height);
-		if (this.backCanvas === null) throw new Error("Couldn't create backCanvas");
-		this.backCtx = this.backCanvas.getContext("2d");
-		if (this.backCtx === null) throw new Error("Couldn't get context from backCanvas");
+		this.display = createDisplay(800, 600);
 	}
 }
 
-function clearBackground(game: Game, color: string = "#606060") {
-	if (game.backCtx === null) return;
-	game.backCtx.clearRect(0, 0, game.width, game.height);
-	game.backCtx.fillStyle = color;
-	game.backCtx.fillRect(0, 0, game.width, game.height);
+function createDisplay(width: number, height: number): Display {
+	const canvas = document.getElementById("canvas") as (HTMLCanvasElement | null);
+	if (canvas === null) throw new Error("Couldn't load canvas");
+	canvas.width = width;
+	canvas.height = height;
+	const ctx = canvas.getContext("2d");
+	if (ctx === null) throw new Error("Couldn't get context from canvas");
+	const backCanvas = new OffscreenCanvas(width, height);
+	if (backCanvas === null) throw new Error("Couldn't create backCanvas");
+	const backCtx = backCanvas.getContext("2d");
+	if (backCtx === null) throw new Error("Couldn't get context from backCanvas");
+	return ({width, height, ctx, backCtx});
 }
 
-function swapBuffers(ctx: CanvasRenderingContext2D | null, backCanvas: OffscreenCanvas) {
-	if (ctx === null) return;
-	ctx.drawImage(backCanvas, 0, 0);
+function clearBackground(display: Display, color: string = "#606060") {
+	display.backCtx.clearRect(0, 0, display.width, display.height);
+	display.backCtx.fillStyle = color;
+	display.backCtx.fillRect(0, 0, display.width, display.height);
+}
+
+function swapBuffers(display: Display) {
+	display.ctx.drawImage(display.backCtx.canvas, 0, 0);
 }
 
 function drawCircle(backCtx: OffscreenCanvasRenderingContext2D | null, p: Vector2, radius: number, color: string) {
@@ -71,9 +74,8 @@ function drawCircle(backCtx: OffscreenCanvasRenderingContext2D | null, p: Vector
 	backCtx.closePath();
 }
 
-function drawPlayer(backCtx: OffscreenCanvasRenderingContext2D | null, player: Player) {
-	if (backCtx === null) return;
-	drawCircle(backCtx, player.getPos(), 5, player.color);
+function drawPlayer(display: Display, player: Player) {
+	drawCircle(display.backCtx, player.getPos(), 5, player.color);
 }
 
 function drawLine(backCtx: OffscreenCanvasRenderingContext2D | null, p1: Vector2, p2: Vector2, color: string) {
@@ -86,14 +88,13 @@ function drawLine(backCtx: OffscreenCanvasRenderingContext2D | null, p1: Vector2
 	backCtx.closePath();
 }
 
-function drawGrid(game: Game) {
-	if (game.backCtx === null) return;
+function drawGrid(display: Display) {
 	const size: number = 32;
-	for (let i = 0; i < game.width; i += size) {
-		drawLine(game.backCtx, new Vector2(i, 0), new Vector2(i, game.height), "#101010")
+	for (let i = 0; i < display.width; i += size) {
+		drawLine(display.backCtx, new Vector2(i, 0), new Vector2(i, display.height), "#101010")
 	}
-	for (let i = 0; i < game.height; i += size) {
-		drawLine(game.backCtx, new Vector2(0, i), new Vector2(game.width, i), "#101010")
+	for (let i = 0; i < display.height; i += size) {
+		drawLine(display.backCtx, new Vector2(0, i), new Vector2(display.width, i), "#101010")
 	}
 }
 
@@ -110,10 +111,10 @@ function main() {
 	const player = new Player();
 	function gameLoop() {
 		movePlayer(player);
-		clearBackground(game);
-		drawPlayer(game.backCtx, player);
-		drawGrid(game);
-		swapBuffers(game.ctx, game.backCanvas);
+		clearBackground(game.display);
+		drawPlayer(game.display, player);
+		drawGrid(game.display);
+		swapBuffers(game.display);
 		requestAnimationFrame(gameLoop);
 	}
 	requestAnimationFrame(gameLoop);
