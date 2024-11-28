@@ -131,10 +131,14 @@ function main() {
 		const bound = game.display.ctx.canvas.getBoundingClientRect();
 		const x = event.changedTouches[0].clientX - bound.left;
 		const y = event.changedTouches[0].clientY - bound.top;
-		if (y < player.y) player.move[Key.UP] = true;
-		if (y > player.y) player.move[Key.DOWN] = true;
-		if (x < player.x) player.move[Key.LEFT] = true;
-		if (x > player.x) player.move[Key.RIGHT] = true;
+		const dx = x - player.x;
+		const dy = y - player.y;
+		if (Math.abs(dx) > Math.abs(dy)) {
+			player.move[dx > 0 ? Key.RIGHT : Key.LEFT] = true;
+		}
+		else {
+			player.move[dy > 0 ? Key.DOWN : Key.UP] = true;
+		}
 	});
 
 	document.addEventListener("touchend", (event) => {

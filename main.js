@@ -97,15 +97,11 @@ function movePlayer(player) {
 function main() {
     const game = new Game();
     const player = new Player();
-    let text = "Hello world";
-    let tap = false;
     function gameLoop() {
         movePlayer(player);
         clearBackground(game.display);
         drawPlayer(game.display, player);
         drawGrid(game.display);
-        game.display.backCtx.fillStyle = "white";
-        game.display.backCtx.fillText(text, 50, 50);
         swapBuffers(game.display);
         requestAnimationFrame(gameLoop);
     }
@@ -115,14 +111,14 @@ function main() {
         const bound = game.display.ctx.canvas.getBoundingClientRect();
         const x = event.changedTouches[0].clientX - bound.left;
         const y = event.changedTouches[0].clientY - bound.top;
-        if (y < player.y)
-            player.move[0 /* Key.UP */] = true;
-        if (y > player.y)
-            player.move[1 /* Key.DOWN */] = true;
-        if (x < player.x)
-            player.move[2 /* Key.LEFT */] = true;
-        if (x > player.x)
-            player.move[3 /* Key.RIGHT */] = true;
+        const dx = x - player.x;
+        const dy = y - player.y;
+        if (Math.abs(dx) > Math.abs(dy)) {
+            player.move[dx > 0 ? 3 /* Key.RIGHT */ : 2 /* Key.LEFT */] = true;
+        }
+        else {
+            player.move[dy > 0 ? 1 /* Key.DOWN */ : 0 /* Key.UP */] = true;
+        }
     });
     document.addEventListener("touchend", (event) => {
         player.move[0 /* Key.UP */] = false;
