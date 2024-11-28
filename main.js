@@ -94,10 +94,9 @@ function movePlayer(player) {
     if (player.move[3 /* Key.RIGHT */])
         player.x += speed;
 }
-function main() {
+(() => {
     const game = new Game();
     const player = new Player();
-    let isSliding = false;
     function gameLoop() {
         movePlayer(player);
         clearBackground(game.display);
@@ -109,7 +108,6 @@ function main() {
     requestAnimationFrame(gameLoop);
     document.addEventListener("touchstart", (event) => {
         event.preventDefault();
-        isSliding = false;
         const bound = game.display.ctx.canvas.getBoundingClientRect();
         const x = event.changedTouches[0].clientX - bound.left;
         const y = event.changedTouches[0].clientY - bound.top;
@@ -122,27 +120,11 @@ function main() {
             player.move[dy > 0 ? 1 /* Key.DOWN */ : 0 /* Key.UP */] = true;
         }
     });
-    document.addEventListener("touchmove", (event) => {
-        event.preventDefault();
-        isSliding = true;
-        const touch = event.changedTouches[0];
-        const bound = game.display.ctx.canvas.getBoundingClientRect();
-        const x = touch.clientX - bound.left;
-        const y = touch.clientY - bound.top;
-        if (Math.abs(x - player.x) > Math.abs(y - player.y)) {
-            player.move[x > player.x ? 3 /* Key.RIGHT */ : 2 /* Key.LEFT */] = true;
-        }
-        else {
-            player.move[y > player.y ? 1 /* Key.DOWN */ : 0 /* Key.UP */] = true;
-        }
-    });
-    document.addEventListener("touchend", () => {
-        if (!isSliding) {
-            player.move[0 /* Key.UP */] = false;
-            player.move[1 /* Key.DOWN */] = false;
-            player.move[2 /* Key.LEFT */] = false;
-            player.move[3 /* Key.RIGHT */] = false;
-        }
+    document.addEventListener("touchend", (event) => {
+        player.move[0 /* Key.UP */] = false;
+        player.move[1 /* Key.DOWN */] = false;
+        player.move[2 /* Key.LEFT */] = false;
+        player.move[3 /* Key.RIGHT */] = false;
     });
     document.addEventListener("keydown", (event) => {
         if (event.code === "KeyW")
@@ -168,5 +150,4 @@ function main() {
         if (event.code === "ShiftLeft")
             player.move[4 /* Key.LSHIFT */] = false;
     });
-}
-main();
+})();
