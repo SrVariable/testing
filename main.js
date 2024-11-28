@@ -1,4 +1,19 @@
 "use strict";
+const map = [
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 1, 1, 1, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+];
 ;
 class Vector2 {
     x;
@@ -13,11 +28,13 @@ class Player {
     y;
     color;
     move;
+    angle;
     constructor(x = 0, y = 0) {
         this.x = x;
         this.y = y;
         this.color = "#ffbbff";
         this.move = [false, false, false, false, false];
+        this.angle = 0;
     }
     getPos() {
         return new Vector2(this.x, this.y);
@@ -81,6 +98,25 @@ function drawGrid(display) {
         drawLine(display, new Vector2(0, i), new Vector2(display.width, i), "#101010");
     }
 }
+function drawMap(display) {
+    const size = 32;
+    display.backCtx.fillStyle = "#fe4";
+    for (let y = 0; y < map.length; ++y) {
+        for (let x = 0; x < map[y].length; ++x) {
+            if (map[y][x] === 1) {
+                display.backCtx.fillRect(x * size, y * size, size, size);
+            }
+        }
+    }
+}
+function drawRay(display, player) {
+    const rayLength = 100;
+    const dir = player.angle * Math.PI / 180;
+    drawLine(display, player.getPos(), new Vector2(player.x + Math.cos(dir) * rayLength, player.y + Math.sin(dir) * rayLength), "#00ff00");
+}
+function properMod(a, b) {
+    return ((a % b + b) % b);
+}
 function movePlayer(player) {
     let speed = 5;
     if (player.move[4 /* Key.LSHIFT */])
@@ -93,6 +129,10 @@ function movePlayer(player) {
         player.x -= speed;
     if (player.move[3 /* Key.RIGHT */])
         player.x += speed;
+    if (player.move[5 /* Key.ARROW_LEFT */])
+        player.angle = properMod(player.angle - 1, 360);
+    if (player.move[6 /* Key.ARROW_RIGHT */])
+        player.angle = properMod(player.angle + 1, 360);
 }
 (() => {
     const game = new Game();
@@ -100,7 +140,9 @@ function movePlayer(player) {
     function gameLoop() {
         movePlayer(player);
         clearBackground(game.display);
+        drawMap(game.display);
         drawPlayer(game.display, player);
+        drawRay(game.display, player);
         drawGrid(game.display);
         swapBuffers(game.display);
         requestAnimationFrame(gameLoop);
@@ -137,6 +179,10 @@ function movePlayer(player) {
             player.move[3 /* Key.RIGHT */] = true;
         if (event.code === "ShiftLeft")
             player.move[4 /* Key.LSHIFT */] = true;
+        if (event.code === "ArrowLeft")
+            player.move[5 /* Key.ARROW_LEFT */] = true;
+        if (event.code === "ArrowRight")
+            player.move[6 /* Key.ARROW_RIGHT */] = true;
     });
     document.addEventListener("keyup", (event) => {
         if (event.code === "KeyW")
@@ -149,5 +195,9 @@ function movePlayer(player) {
             player.move[3 /* Key.RIGHT */] = false;
         if (event.code === "ShiftLeft")
             player.move[4 /* Key.LSHIFT */] = false;
+        if (event.code === "ArrowLeft")
+            player.move[5 /* Key.ARROW_LEFT */] = false;
+        if (event.code === "ArrowRight")
+            player.move[6 /* Key.ARROW_RIGHT */] = false;
     });
 })();

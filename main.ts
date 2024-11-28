@@ -1,3 +1,19 @@
+const map = [
+	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+	[1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+	[1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+	[1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+	[1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+	[1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+	[1, 0, 0, 1, 1, 1, 0, 0, 0, 1],
+	[1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+	[1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+	[1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+	[1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+	[1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+]
+
 interface Display {
 	width: number;
 	height: number;
@@ -11,6 +27,8 @@ const enum Key {
 	LEFT,
 	RIGHT,
 	LSHIFT,
+	ARROW_LEFT,
+	ARROW_RIGHT,
 };
 
 class Vector2 {
@@ -28,12 +46,14 @@ class Player {
 	y: number;
 	color: string;
 	move: Array<boolean>;
+	angle: number;
 
-	constructor (x: number = 0, y: number = 0) {
+	constructor(x: number = 0, y: number = 0) {
 		this.x = x;
 		this.y = y;
 		this.color = "#ffbbff";
 		this.move = [false, false, false, false, false];
+		this.angle = 0;
 	}
 
 	getPos(): Vector2 {
@@ -60,7 +80,7 @@ function createDisplay(width: number, height: number): Display {
 	if (backCanvas === null) throw new Error("Couldn't create backCanvas");
 	const backCtx = backCanvas.getContext("2d");
 	if (backCtx === null) throw new Error("Couldn't get context from backCanvas");
-	return ({width, height, ctx, backCtx});
+	return ({ width, height, ctx, backCtx });
 }
 
 function clearBackground(display: Display, color: string = "#606060") {
@@ -95,13 +115,35 @@ function drawLine(display: Display, p1: Vector2, p2: Vector2, color: string) {
 }
 
 function drawGrid(display: Display) {
-	const size: number = 32;
+	const size = 32;
 	for (let i = 0; i < display.width; i += size) {
 		drawLine(display, new Vector2(i, 0), new Vector2(i, display.height), "#101010")
 	}
 	for (let i = 0; i < display.height; i += size) {
 		drawLine(display, new Vector2(0, i), new Vector2(display.width, i), "#101010")
 	}
+}
+
+function drawMap(display: Display) {
+	const size = 32;
+	display.backCtx.fillStyle = "#fe4";
+	for (let y = 0; y < map.length; ++y) {
+		for (let x = 0; x < map[y].length; ++x) {
+			if (map[y][x] === 1) {
+				display.backCtx.fillRect(x * size, y * size, size, size);
+			}
+		}
+	}
+}
+
+function drawRay(display: Display, player: Player) {
+	const rayLength = 100;
+	const dir = player.angle * Math.PI / 180;
+	drawLine(display, player.getPos(), new Vector2(player.x + Math.cos(dir) * rayLength, player.y + Math.sin(dir) * rayLength), "#00ff00");
+}
+
+function properMod(a: number, b: number) {
+	return ((a % b + b) % b);
 }
 
 function movePlayer(player: Player) {
@@ -111,6 +153,8 @@ function movePlayer(player: Player) {
 	if (player.move[Key.DOWN]) player.y += speed;
 	if (player.move[Key.LEFT]) player.x -= speed;
 	if (player.move[Key.RIGHT]) player.x += speed;
+	if (player.move[Key.ARROW_LEFT]) player.angle = properMod(player.angle - 1, 360);
+	if (player.move[Key.ARROW_RIGHT]) player.angle = properMod(player.angle + 1, 360);
 }
 
 (() => {
@@ -119,7 +163,9 @@ function movePlayer(player: Player) {
 	function gameLoop() {
 		movePlayer(player);
 		clearBackground(game.display);
+		drawMap(game.display);
 		drawPlayer(game.display, player);
+		drawRay(game.display, player);
 		drawGrid(game.display);
 		swapBuffers(game.display);
 		requestAnimationFrame(gameLoop);
@@ -154,6 +200,8 @@ function movePlayer(player: Player) {
 		if (event.code === "KeyA") player.move[Key.LEFT] = true;
 		if (event.code === "KeyD") player.move[Key.RIGHT] = true;
 		if (event.code === "ShiftLeft") player.move[Key.LSHIFT] = true;
+		if (event.code === "ArrowLeft") player.move[Key.ARROW_LEFT] = true;
+		if (event.code === "ArrowRight") player.move[Key.ARROW_RIGHT] = true;
 	});
 
 	document.addEventListener("keyup", (event) => {
@@ -162,5 +210,7 @@ function movePlayer(player: Player) {
 		if (event.code === "KeyA") player.move[Key.LEFT] = false;
 		if (event.code === "KeyD") player.move[Key.RIGHT] = false;
 		if (event.code === "ShiftLeft") player.move[Key.LSHIFT] = false;
+		if (event.code === "ArrowLeft") player.move[Key.ARROW_LEFT] = false;
+		if (event.code === "ArrowRight") player.move[Key.ARROW_RIGHT] = false;
 	});
 })();
