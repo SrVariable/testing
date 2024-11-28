@@ -5,6 +5,14 @@ interface Display {
 	backCtx: OffscreenCanvasRenderingContext2D;
 }
 
+const enum Key {
+	UP,
+	DOWN,
+	LEFT,
+	RIGHT,
+	LSHIFT,
+};
+
 class Vector2 {
 	x: number;
 	y: number;
@@ -25,7 +33,7 @@ class Player {
 		this.x = x;
 		this.y = y;
 		this.color = "#ffbbff";
-		this.move = [false, false, false, false];
+		this.move = [false, false, false, false, false];
 	}
 
 	getPos(): Vector2 {
@@ -65,45 +73,44 @@ function swapBuffers(display: Display) {
 	display.ctx.drawImage(display.backCtx.canvas, 0, 0);
 }
 
-function drawCircle(backCtx: OffscreenCanvasRenderingContext2D | null, p: Vector2, radius: number, color: string) {
-	if (backCtx === null) return;
-	backCtx.beginPath();
-	backCtx.arc(p.x, p.y, radius, 0, Math.PI * 2);
-	backCtx.fillStyle = color;
-	backCtx.fill();
-	backCtx.closePath();
+function drawCircle(display: Display, p: Vector2, radius: number, color: string) {
+	display.backCtx.beginPath();
+	display.backCtx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+	display.backCtx.fillStyle = color;
+	display.backCtx.fill();
+	display.backCtx.closePath();
 }
 
 function drawPlayer(display: Display, player: Player) {
-	drawCircle(display.backCtx, player.getPos(), 5, player.color);
+	drawCircle(display, player.getPos(), 5, player.color);
 }
 
-function drawLine(backCtx: OffscreenCanvasRenderingContext2D | null, p1: Vector2, p2: Vector2, color: string) {
-	if (backCtx === null) return;
-	backCtx.beginPath();
-	backCtx.moveTo(p1.x, p1.y);
-	backCtx.lineTo(p2.x, p2.y);
-	backCtx.strokeStyle = color;
-	backCtx.stroke();
-	backCtx.closePath();
+function drawLine(display: Display, p1: Vector2, p2: Vector2, color: string) {
+	display.backCtx.beginPath();
+	display.backCtx.moveTo(p1.x, p1.y);
+	display.backCtx.lineTo(p2.x, p2.y);
+	display.backCtx.strokeStyle = color;
+	display.backCtx.stroke();
+	display.backCtx.closePath();
 }
 
 function drawGrid(display: Display) {
 	const size: number = 32;
 	for (let i = 0; i < display.width; i += size) {
-		drawLine(display.backCtx, new Vector2(i, 0), new Vector2(i, display.height), "#101010")
+		drawLine(display, new Vector2(i, 0), new Vector2(i, display.height), "#101010")
 	}
 	for (let i = 0; i < display.height; i += size) {
-		drawLine(display.backCtx, new Vector2(0, i), new Vector2(display.width, i), "#101010")
+		drawLine(display, new Vector2(0, i), new Vector2(display.width, i), "#101010")
 	}
 }
 
 function movePlayer(player: Player) {
-	const speed = 5;
-	if (player.move[0]) player.y -= 5;
-	if (player.move[1]) player.y += 5;
-	if (player.move[2]) player.x -= 5;
-	if (player.move[3]) player.x += 5;
+	let speed = 5;
+	if (player.move[Key.LSHIFT]) speed *= 2;
+	if (player.move[Key.UP]) player.y -= speed;
+	if (player.move[Key.DOWN]) player.y += speed;
+	if (player.move[Key.LEFT]) player.x -= speed;
+	if (player.move[Key.RIGHT]) player.x += speed;
 }
 
 function main() {
@@ -119,20 +126,38 @@ function main() {
 	}
 	requestAnimationFrame(gameLoop);
 
-	document.addEventListener("keydown", (e) => {
-		const key = e.key.toLowerCase();
-		if (key === "w") player.move[0] = true;
-		if (key === "s") player.move[1] = true;
-		if (key === "a") player.move[2] = true;
-		if (key === "d") player.move[3] = true;
+	document.addEventListener("touchstart", (event) => {
+		event.preventDefault();
+		const bound = game.display.ctx.canvas.getBoundingClientRect();
+		const x = event.changedTouches[0].clientX - bound.left;
+		const y = event.changedTouches[0].clientY - bound.top;
+		if (y < player.y) player.move[Key.UP] = true;
+		if (y > player.y) player.move[Key.DOWN] = true;
+		if (x < player.x) player.move[Key.LEFT] = true;
+		if (x > player.x) player.move[Key.RIGHT] = true;
 	});
 
-	document.addEventListener("keyup", (e) => {
-		const key = e.key.toLowerCase();
-		if (key === "w") player.move[0] = false;
-		if (key === "s") player.move[1] = false;
-		if (key === "a") player.move[2] = false;
-		if (key === "d") player.move[3] = false;
+	document.addEventListener("touchend", (event) => {
+		player.move[Key.UP] = false;
+		player.move[Key.DOWN] = false;
+		player.move[Key.LEFT] = false;
+		player.move[Key.RIGHT] = false;
+	});
+
+	document.addEventListener("keydown", (event) => {
+		if (event.code === "KeyW") player.move[Key.UP] = true;
+		if (event.code === "KeyS") player.move[Key.DOWN] = true;
+		if (event.code === "KeyA") player.move[Key.LEFT] = true;
+		if (event.code === "KeyD") player.move[Key.RIGHT] = true;
+		if (event.code === "ShiftLeft") player.move[Key.LSHIFT] = true;
+	});
+
+	document.addEventListener("keyup", (event) => {
+		if (event.code === "KeyW") player.move[Key.UP] = false;
+		if (event.code === "KeyS") player.move[Key.DOWN] = false;
+		if (event.code === "KeyA") player.move[Key.LEFT] = false;
+		if (event.code === "KeyD") player.move[Key.RIGHT] = false;
+		if (event.code === "ShiftLeft") player.move[Key.LSHIFT] = false;
 	});
 }
 
