@@ -116,6 +116,7 @@ function movePlayer(player: Player) {
 function main() {
 	const game = new Game();
 	const player = new Player();
+	let isSliding = false;
 	function gameLoop() {
 		movePlayer(player);
 		clearBackground(game.display);
@@ -128,6 +129,7 @@ function main() {
 
 	document.addEventListener("touchstart", (event) => {
 		event.preventDefault();
+		isSliding = false;
 		const bound = game.display.ctx.canvas.getBoundingClientRect();
 		const x = event.changedTouches[0].clientX - bound.left;
 		const y = event.changedTouches[0].clientY - bound.top;
@@ -141,11 +143,27 @@ function main() {
 		}
 	});
 
-	document.addEventListener("touchend", (event) => {
-		player.move[Key.UP] = false;
-		player.move[Key.DOWN] = false;
-		player.move[Key.LEFT] = false;
-		player.move[Key.RIGHT] = false;
+	document.addEventListener("touchmove", (event) => {
+		event.preventDefault();
+		isSliding = true;
+		const touch = event.changedTouches[0];
+		const bound = game.display.ctx.canvas.getBoundingClientRect();
+		const x = touch.clientX - bound.left;
+		const y = touch.clientY - bound.top;
+		if (Math.abs(x - player.x) > Math.abs(y - player.y)) {
+			player.move[x > player.x ? Key.RIGHT : Key.LEFT] = true;
+		} else {
+			player.move[y > player.y ? Key.DOWN : Key.UP] = true;
+		}
+	});
+
+	document.addEventListener("touchend", () => {
+		if (!isSliding) {
+			player.move[Key.UP] = false;
+			player.move[Key.DOWN] = false;
+			player.move[Key.LEFT] = false;
+			player.move[Key.RIGHT] = false;
+		}
 	});
 
 	document.addEventListener("keydown", (event) => {
