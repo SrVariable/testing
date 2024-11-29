@@ -123,7 +123,7 @@ function drawRay(display, player) {
     else {
         snap.x = p.x - diffx;
     }
-    drawCircle(display, new Vector2(snap.x, p.y), 5, "blue");
+    drawCircle(display, new Vector2(snap.x, p.y), 5, "#0066ff");
     const diffy = player.y % 32;
     if (diffy > 32 * 0.5) {
         snap.y = p.y + 32 - diffy;
@@ -131,7 +131,7 @@ function drawRay(display, player) {
     else {
         snap.y = p.y - diffy;
     }
-    drawCircle(display, new Vector2(p.x, snap.y), 5, "green");
+    drawCircle(display, new Vector2(p.x, snap.y), 5, "#00ff66");
 }
 function movePlayer(player) {
     let speed = 1;
