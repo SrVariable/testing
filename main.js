@@ -112,13 +112,29 @@ function drawMap(display) {
 function drawRay(display, player) {
     const rayLength = 100;
     const dir = player.angle * Math.PI / 180;
-    drawLine(display, player.getPos(), new Vector2(player.x + Math.cos(dir) * rayLength, player.y + Math.sin(dir) * rayLength), "#00ff00");
-}
-function properMod(a, b) {
-    return ((a % b + b) % b);
+    let p = new Vector2(player.x + Math.cos(dir), player.y + Math.sin(dir) * rayLength);
+    let stop = false;
+    let count = 0;
+    const diffx = player.x % 32;
+    let snap = new Vector2();
+    if (diffx > 32 * 0.5) {
+        snap.x = p.x + 32 - diffx;
+    }
+    else {
+        snap.x = p.x - diffx;
+    }
+    drawCircle(display, new Vector2(snap.x, p.y), 5, "blue");
+    const diffy = player.y % 32;
+    if (diffy > 32 * 0.5) {
+        snap.y = p.y + 32 - diffy;
+    }
+    else {
+        snap.y = p.y - diffy;
+    }
+    drawCircle(display, new Vector2(p.x, snap.y), 5, "green");
 }
 function movePlayer(player) {
-    let speed = 5;
+    let speed = 1;
     if (player.move[4 /* Key.LSHIFT */])
         speed *= 2;
     if (player.move[0 /* Key.UP */])
@@ -134,6 +150,9 @@ function movePlayer(player) {
     if (player.move[6 /* Key.ARROW_RIGHT */])
         player.angle = properMod(player.angle + 1, 360);
 }
+function properMod(a, b) {
+    return ((a % b + b) % b);
+}
 (() => {
     const game = new Game();
     const player = new Player();
@@ -141,9 +160,9 @@ function movePlayer(player) {
         movePlayer(player);
         clearBackground(game.display);
         drawMap(game.display);
+        drawGrid(game.display);
         drawPlayer(game.display, player);
         drawRay(game.display, player);
-        drawGrid(game.display);
         swapBuffers(game.display);
         requestAnimationFrame(gameLoop);
     }
