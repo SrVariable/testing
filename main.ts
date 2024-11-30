@@ -39,6 +39,10 @@ class Vector2 {
 		this.x = x;
 		this.y = y;
 	}
+
+	equals(that: Vector2) {
+		return (this.x === that.x && this.y === that.y);
+	}
 }
 
 class Player {
@@ -136,51 +140,56 @@ function drawMap(display: Display) {
 	}
 }
 
+// The try catch must be modified because I can't have that in C
 function calculatePoints(p: Vector2, dir: number) {
 	let p2 = new Vector2();
 	for (let i = 0; i < 10000; ++i) {
 		p2 = new Vector2(p.x + Math.cos(dir) * i, p.y + Math.sin(dir) * i);
-		if (Math.floor(p2.x) % 32 === 0 || Math.floor(p2.y) % 32 === 0) {
+		const newX = Math.floor(p.x / 32);
+		const newY = Math.floor(p.y / 32);
+		try {
+			if ((Math.floor(p2.x) % 32 === 0 || Math.floor(p2.y) % 32 === 0) && !p2.equals(p)
+				&& map[newY][newX] != 1) {
+				return (p2);
+			}
+		}
+		catch {
 			return (p2);
 		}
 	}
 	return (p2);
 }
 
-function drawRay(display: Display, player: Player) {
-	const rayLength = 100;
-	const dir = player.angle * Math.PI / 180;
+function drawRay(display: Display, player: Player, dir: number) {
+	const rayLength = 1000;
 	let p = new Vector2(player.x + Math.cos(dir), player.y + Math.sin(dir));
-	for (let i = 0; i < 10000; ++i) {
+	for (let i = 0; i < 20; ++i) {
 		let x = 1;
 		let y = 1;
-		if (player.angle > 90 && player.angle < 180) {
+		if (player.angle >= 90 && player.angle < 180) {
 			x = -1;
 		}
-		else if (player.angle > 180 && player.angle < 270) {
+		else if (player.angle >= 180 && player.angle < 270) {
 			x = -1;
 			y = -1;
 		}
-		else if (player.angle > 270 && player.angle < 360) {
+		else if (player.angle >= 270 && player.angle < 360) {
 			y = -1;
 		}
 		p = calculatePoints(new Vector2(p.x + x, p.y + y), dir);
 		drawCircle(display, p, 2, "#ff0000");
-		if (x > 0 && y < 0) {
-			if (map[Math.floor(p.y / 32)][Math.floor(p.x / 32) + 1]) {
+		const newX = Math.floor(p.x / 32);
+		const newY = Math.floor(p.y / 32);
+		try {
+			if (map[newY][newX] === 1) {
 				break;
 			}
 		}
-		else if (x < 0 && y < 0) {
-			if (map[Math.floor(p.y / 32) + 1][Math.floor(p.x / 32)]) {
-				break;
-			}
-		}
-		if (map[Math.floor(p.y / 32)][Math.floor(p.x / 32)]) {
+		catch {
 			break;
 		}
 	}
-	//drawLine(display, player.getPos(), new Vector2(player.x + Math.cos(dir) * rayLength, player.y + Math.sin(dir) * rayLength), "#00ff00");
+	drawLine(display, player.getPos(), new Vector2(player.x + Math.cos(dir) * rayLength, player.y + Math.sin(dir) * rayLength), "#00ff00");
 }
 
 function movePlayer(player: Player) {
@@ -207,7 +216,12 @@ function properMod(a: number, b: number) {
 		drawMap(game.display);
 		drawGrid(game.display);
 		drawPlayer(game.display, player);
-		drawRay(game.display, player);
+		for (let i = 0; i < 15; ++i) {
+			drawRay(game.display, player, (player.angle + i) % 360 * Math.PI / 180);
+		}
+		for (let i = 1; i < 16; ++i) {
+			drawRay(game.display, player, properMod(player.angle - i, 360) * Math.PI / 180);
+		}
 		swapBuffers(game.display);
 		requestAnimationFrame(gameLoop);
 	}
