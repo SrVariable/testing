@@ -79,7 +79,7 @@ function drawCircle(display, p, radius, color) {
     display.backCtx.closePath();
 }
 function drawPlayer(display, player) {
-    drawCircle(display, player.getPos(), 5, player.color);
+    drawCircle(display, player.getPos(), 2, player.color);
 }
 function drawLine(display, p1, p2, color) {
     display.backCtx.beginPath();
@@ -109,29 +109,50 @@ function drawMap(display) {
         }
     }
 }
+function calculatePoints(p, dir) {
+    let p2 = new Vector2();
+    for (let i = 0; i < 10000; ++i) {
+        p2 = new Vector2(p.x + Math.cos(dir) * i, p.y + Math.sin(dir) * i);
+        if (Math.floor(p2.x) % 32 === 0 || Math.floor(p2.y) % 32 === 0) {
+            return (p2);
+        }
+    }
+    return (p2);
+}
 function drawRay(display, player) {
     const rayLength = 100;
     const dir = player.angle * Math.PI / 180;
-    let p = new Vector2(player.x + Math.cos(dir), player.y + Math.sin(dir) * rayLength);
-    let stop = false;
-    let count = 0;
-    const diffx = player.x % 32;
-    let snap = new Vector2();
-    if (diffx > 32 * 0.5) {
-        snap.x = p.x + 32 - diffx;
+    let p = new Vector2(player.x + Math.cos(dir), player.y + Math.sin(dir));
+    for (let i = 0; i < 10000; ++i) {
+        let x = 1;
+        let y = 1;
+        if (player.angle > 90 && player.angle < 180) {
+            x = -1;
+        }
+        else if (player.angle > 180 && player.angle < 270) {
+            x = -1;
+            y = -1;
+        }
+        else if (player.angle > 270 && player.angle < 360) {
+            y = -1;
+        }
+        p = calculatePoints(new Vector2(p.x + x, p.y + y), dir);
+        drawCircle(display, p, 2, "#ff0000");
+        if (x > 0 && y < 0) {
+            if (map[Math.floor(p.y / 32)][Math.floor(p.x / 32) + 1]) {
+                break;
+            }
+        }
+        else if (x < 0 && y < 0) {
+            if (map[Math.floor(p.y / 32) + 1][Math.floor(p.x / 32)]) {
+                break;
+            }
+        }
+        if (map[Math.floor(p.y / 32)][Math.floor(p.x / 32)]) {
+            break;
+        }
     }
-    else {
-        snap.x = p.x - diffx;
-    }
-    drawCircle(display, new Vector2(snap.x, p.y), 5, "#0066ff");
-    const diffy = player.y % 32;
-    if (diffy > 32 * 0.5) {
-        snap.y = p.y + 32 - diffy;
-    }
-    else {
-        snap.y = p.y - diffy;
-    }
-    drawCircle(display, new Vector2(p.x, snap.y), 5, "#00ff66");
+    //drawLine(display, player.getPos(), new Vector2(player.x + Math.cos(dir) * rayLength, player.y + Math.sin(dir) * rayLength), "#00ff00");
 }
 function movePlayer(player) {
     let speed = 1;
